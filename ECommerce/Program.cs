@@ -12,7 +12,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 
 builder.Services.AddDbContext<EcommerceContext>(options =>
-	options.UseSqlServer(builder.Configuration.GetConnectionString("MyDatabaseConnection")));
+	options.UseSqlite(builder.Configuration.GetConnectionString("MyDatabaseConnection")));
 builder.Services.AddTransient<IBank, Bank>();
 
 builder.Services.AddCors(options =>

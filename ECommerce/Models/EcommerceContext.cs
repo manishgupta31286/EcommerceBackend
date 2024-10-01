@@ -22,7 +22,7 @@ public partial class EcommerceContext : DbContext
     public virtual DbSet<Product> Products { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer("Name=MyDatabaseConnection");
+        => optionsBuilder.UseSqlite("Name=MyDatabaseConnection");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -32,7 +32,7 @@ namespace ECommerce.Controllers
 				(cartItem, product) => new CartItem
 				{
 					ProductId = cartItem.ProductId,
-					ProductName = product.Name,
+					ProductName = product.Name ?? string.Empty,
 					Quantity = cartItem.Quantity
 				}).ToListAsync();
 
