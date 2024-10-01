@@ -36,7 +36,7 @@ namespace ECommerce.Controllers
 					Quantity = cartItem.Quantity
 				}).ToListAsync();
 
-			return Ok(cartItems);
+			return Ok(cartItems.Where(x => x.Quantity > 0));
 		}
 
 		[HttpPost]
