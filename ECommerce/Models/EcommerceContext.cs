@@ -4,13 +4,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Models;
 
-public partial class SeedEcommerceContext : DbContext
+public partial class EcommerceContext : DbContext
 {
-    public SeedEcommerceContext()
+    public EcommerceContext()
     {
     }
 
-    public SeedEcommerceContext(DbContextOptions<SeedEcommerceContext> options)
+    public EcommerceContext(DbContextOptions<EcommerceContext> options)
         : base(options)
     {
     }

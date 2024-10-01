@@ -6,9 +6,9 @@ namespace ECommerce.Controllers
 {
 	[ApiController]
 	[Route("api/[controller]")]
-	public class CategoryController(SeedEcommerceContext dbContext) : ControllerBase
+	public class CategoryController(EcommerceContext dbContext) : ControllerBase
 	{
-		private readonly SeedEcommerceContext _dbContext = dbContext;
+		private readonly EcommerceContext _dbContext = dbContext;
 		[HttpGet]
 		public async Task<IActionResult> Get()
 		{

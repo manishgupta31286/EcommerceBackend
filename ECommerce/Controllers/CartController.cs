@@ -7,9 +7,9 @@ namespace ECommerce.Controllers
 {
 	[ApiController]
 	[Route("api/[controller]")]
-	public class CartController(SeedEcommerceContext dbContext) : ControllerBase
+	public class CartController(EcommerceContext dbContext) : ControllerBase
 	{
-		private readonly SeedEcommerceContext _dbContext = dbContext;
+		private readonly EcommerceContext _dbContext = dbContext;
 		[HttpGet("{cartid}")]
 		public async Task<IActionResult> Get(Guid cartid)
 		{

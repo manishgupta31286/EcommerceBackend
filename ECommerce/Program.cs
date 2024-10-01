@@ -11,7 +11,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 
-builder.Services.AddDbContext<SeedEcommerceContext>(options =>
+builder.Services.AddDbContext<EcommerceContext>(options =>
 	options.UseSqlServer(builder.Configuration.GetConnectionString("MyDatabaseConnection")));
 builder.Services.AddTransient<IBank, Bank>();
 
