@@ -18,25 +18,26 @@ namespace ECommerce.Controllers
 				return NoContent();
 			}
 			var cartItems = await _dbContext.Carts
-			.Where(x => x.CartId == cartid)
-			.GroupBy(x => new { x.CartId, x.ProductId })
-			.Select(x => new CartItem
-			{
-				ProductId = x.Key.ProductId,
-				ProductName = string.Empty,
-				Quantity = x.Sum(x => x.Quantity)
-			})
-			.Join(_dbContext.Products,
-				cartItem => cartItem.ProductId,
-				product => product.Id,
-				(cartItem, product) => new CartItem
+				.Where(x => x.CartId == cartid)
+				.GroupBy(x => new { x.CartId, x.ProductId })
+				.Select(x => new CartItem
 				{
-					ProductId = cartItem.ProductId,
-					ProductName = product.Name ?? string.Empty,
-					Quantity = cartItem.Quantity
-				}).ToListAsync();
+					ProductId = x.Key.ProductId,
+					ProductName = string.Empty,
+					Quantity = x.Sum(x => x.Quantity)
+				})
+				.Where(x => x.Quantity > 0)
+				.Join(_dbContext.Products,
+					cartItem => cartItem.ProductId,
+					product => product.Id,
+					(cartItem, product) => new CartItem
+					{
+						ProductId = cartItem.ProductId,
+						ProductName = product.Name ?? string.Empty,
+						Quantity = cartItem.Quantity
+					}).ToListAsync();
 
-			return Ok(cartItems.Where(x => x.Quantity > 0));
+			return Ok(cartItems);
 		}
 
 		[HttpPost]
