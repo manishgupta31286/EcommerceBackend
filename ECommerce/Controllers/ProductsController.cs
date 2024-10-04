@@ -10,6 +10,7 @@ namespace ECommerce.Controllers
 	{
 		private readonly EcommerceContext _dbContext = dbContext;
 		[HttpGet]
+		[ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
 		public async Task<IActionResult> Get()
 		{
 			var products = await _dbContext.Products.ToListAsync();

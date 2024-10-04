@@ -16,10 +16,9 @@ public partial class EcommerceContext : DbContext
     }
 
     public virtual DbSet<Cart> Carts { get; set; }
-
     public virtual DbSet<Category> Categories { get; set; }
-
     public virtual DbSet<Product> Products { get; set; }
+    public virtual DbSet<Contact> Contacts { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseSqlite("Name=MyDatabaseConnection");
@@ -55,6 +54,21 @@ public partial class EcommerceContext : DbContext
             entity.HasOne(d => d.Category).WithMany(p => p.Products)
                 .HasForeignKey(d => d.CategoryId)
                 .HasConstraintName("FK_Product_Category");
+        });
+
+        modelBuilder.Entity<Contact>(entity =>
+        {
+            entity.ToTable("Contact");
+
+            entity.Property(e => e.FirstName)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+            entity.Property(e => e.LastName)
+                .HasMaxLength(100)
+                .IsUnicode(false);
+            entity.Property(e => e.Email)
+            .HasMaxLength(100)
+            .IsUnicode(false);
         });
 
         OnModelCreatingPartial(modelBuilder);

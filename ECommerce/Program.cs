@@ -10,10 +10,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
+builder.Services.AddResponseCaching();
 
 builder.Services.AddDbContext<EcommerceContext>(options =>
 	options.UseSqlite(builder.Configuration.GetConnectionString("MyDatabaseConnection")));
-builder.Services.AddTransient<IBank, Bank>();
 
 builder.Services.AddCors(options =>
 {
@@ -39,6 +39,9 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowOrigin");
 app.UseHttpsRedirection();
 
+app.UseRouting();
+
+app.UseResponseCaching();
 app.MapControllers();
 
 app.Run();

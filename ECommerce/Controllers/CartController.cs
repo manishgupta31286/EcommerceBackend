@@ -10,6 +10,7 @@ namespace ECommerce.Controllers
 	public class CartController(EcommerceContext dbContext) : ControllerBase
 	{
 		private readonly EcommerceContext _dbContext = dbContext;
+
 		[HttpGet("{cartid}")]
 		public async Task<IActionResult> Get(Guid cartid)
 		{
@@ -35,7 +36,8 @@ namespace ECommerce.Controllers
 						ProductId = cartItem.ProductId,
 						ProductName = product.Name ?? string.Empty,
 						Quantity = cartItem.Quantity
-					}).ToListAsync();
+					})
+				.ToListAsync();
 
 			return Ok(cartItems);
 		}
