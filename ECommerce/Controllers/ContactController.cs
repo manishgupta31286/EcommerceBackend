@@ -15,11 +15,32 @@ namespace ECommerce.Controllers
         private readonly EcommerceContext _dbContext = dbContext;
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll(string searchTerm = null, int pageNumber = 1, int pageSize = 10)
         {
-            var contacts = await _dbContext.Contacts.ToListAsync();
-            return Ok(contacts);
+            var contactsQuery = _dbContext.Contacts.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                string lowerSearchTerm = searchTerm.ToLower();
+                contactsQuery = contactsQuery.Where(c =>
+                    (c.FirstName ?? string.Empty).ToLower().Contains(lowerSearchTerm) ||
+                    (c.LastName ?? string.Empty).ToLower().Contains(lowerSearchTerm) ||
+                    (c.Email ?? string.Empty).ToLower().Contains(lowerSearchTerm));
+            }
+
+            var totalContacts = await contactsQuery.CountAsync();
+            var contacts = await contactsQuery
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return Ok(new
+            {
+                TotalCount = totalContacts,
+                Contacts = contacts
+            });
         }
+
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetContactById(int id)
