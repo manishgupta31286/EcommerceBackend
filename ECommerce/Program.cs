@@ -11,7 +11,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 builder.Services.AddResponseCaching();
-
+builder.Services.AddMemoryCache();
 builder.Services.AddDbContext<EcommerceContext>(options =>
 	options.UseSqlite(builder.Configuration.GetConnectionString("MyDatabaseConnection")));
 

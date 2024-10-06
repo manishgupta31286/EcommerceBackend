@@ -5,42 +5,62 @@ using System.Threading.Tasks;
 using ECommerce.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace ECommerce.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ContactController(EcommerceContext dbContext) : ControllerBase
+    public class ContactController(EcommerceContext dbContext, IMemoryCache cache) : ControllerBase
     {
         private readonly EcommerceContext _dbContext = dbContext;
+        private readonly IMemoryCache _cache = cache;
+        private const string CachePrefix = "contacts_";
+        private readonly List<string> _cacheKeys = [];
 
         [HttpGet]
         public async Task<IActionResult> GetAll(string searchTerm = null, int pageNumber = 1, int pageSize = 10)
         {
-            var contactsQuery = _dbContext.Contacts.AsQueryable();
+            var cacheKey = $"{CachePrefix}{searchTerm}_{pageNumber}_{pageSize}";
 
-            if (!string.IsNullOrWhiteSpace(searchTerm))
+            if (!_cache.TryGetValue(cacheKey, out var cachedResult))
             {
-                string lowerSearchTerm = searchTerm.ToLower();
-                contactsQuery = contactsQuery.Where(c =>
-                    (c.FirstName ?? string.Empty).ToLower().Contains(lowerSearchTerm) ||
-                    (c.LastName ?? string.Empty).ToLower().Contains(lowerSearchTerm) ||
-                    (c.Email ?? string.Empty).ToLower().Contains(lowerSearchTerm));
+                var contactsQuery = _dbContext.Contacts.AsQueryable();
+
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    string lowerSearchTerm = searchTerm.ToLower();
+                    contactsQuery = contactsQuery.Where(c =>
+                        (c.FirstName ?? string.Empty).ToLower().Contains(lowerSearchTerm) ||
+                        (c.LastName ?? string.Empty).ToLower().Contains(lowerSearchTerm) ||
+                        (c.Email ?? string.Empty).ToLower().Contains(lowerSearchTerm));
+                }
+
+                var totalContacts = await contactsQuery.CountAsync();
+                var contacts = await contactsQuery
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                var result = new
+                {
+                    TotalCount = totalContacts,
+                    Contacts = contacts
+                };
+
+                // Set cache options (e.g., duration)
+                var cacheOptions = new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) // Set duration as needed
+                };
+
+                // Save data in cache
+                _cache.Set(cacheKey, result, cacheOptions);
+                _cacheKeys.Add(cacheKey);
+                return Ok(result);
             }
-
-            var totalContacts = await contactsQuery.CountAsync();
-            var contacts = await contactsQuery
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            return Ok(new
-            {
-                TotalCount = totalContacts,
-                Contacts = contacts
-            });
+            return Ok(cachedResult);
         }
-
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetContactById(int id)
@@ -66,7 +86,7 @@ namespace ECommerce.Controllers
             // Add the new contact
             await _dbContext.Contacts.AddAsync(contact);
             await _dbContext.SaveChangesAsync();
-
+            InvalidateAllCaches();
             return CreatedAtAction(nameof(GetContactById), new { id = contact.Id }, contact);
         }
 
@@ -95,6 +115,7 @@ namespace ECommerce.Controllers
             existingContact.Email = contact.Email;
 
             await _dbContext.SaveChangesAsync();
+            InvalidateAllCaches();
 
             return Ok(existingContact); // Return the updated contact
         }
@@ -112,9 +133,18 @@ namespace ECommerce.Controllers
             // Remove the contact from the database
             _dbContext.Contacts.Remove(existingContact);
             await _dbContext.SaveChangesAsync();
-
+            InvalidateAllCaches();
             // Return a No Content response
             return NoContent();
+        }
+
+        private void InvalidateAllCaches()
+        {
+            foreach (var key in _cacheKeys)
+            {
+                _cache.Remove(key);
+            }
+            _cacheKeys.Clear();
         }
     }
 }
