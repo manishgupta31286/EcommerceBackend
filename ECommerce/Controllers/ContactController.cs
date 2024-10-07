@@ -11,12 +11,15 @@ namespace ECommerce.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ContactController(EcommerceContext dbContext, IMemoryCache cache) : ControllerBase
+    public class ContactController(EcommerceContext dbContext,
+        IMemoryCache cache,
+        CacheManager cacheManager) : ControllerBase
     {
         private readonly EcommerceContext _dbContext = dbContext;
         private readonly IMemoryCache _cache = cache;
         private const string CachePrefix = "contacts_";
         private readonly List<string> _cacheKeys = [];
+        private readonly CacheManager _cacheManager = cacheManager;
 
         [HttpGet]
         public async Task<IActionResult> GetAll(string searchTerm = null, int pageNumber = 1, int pageSize = 10)
@@ -53,10 +56,7 @@ namespace ECommerce.Controllers
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) // Set duration as needed
                 };
-
-                // Save data in cache
-                _cache.Set(cacheKey, result, cacheOptions);
-                _cacheKeys.Add(cacheKey);
+                _cacheManager.AddToCache(cacheKey, result);
                 return Ok(result);
             }
             return Ok(cachedResult);
@@ -86,7 +86,7 @@ namespace ECommerce.Controllers
             // Add the new contact
             await _dbContext.Contacts.AddAsync(contact);
             await _dbContext.SaveChangesAsync();
-            InvalidateAllCaches();
+            _cacheManager.InvalidateAllCaches();
             return CreatedAtAction(nameof(GetContactById), new { id = contact.Id }, contact);
         }
 
@@ -115,7 +115,7 @@ namespace ECommerce.Controllers
             existingContact.Email = contact.Email;
 
             await _dbContext.SaveChangesAsync();
-            InvalidateAllCaches();
+            _cacheManager.InvalidateAllCaches();
 
             return Ok(existingContact); // Return the updated contact
         }
@@ -133,18 +133,9 @@ namespace ECommerce.Controllers
             // Remove the contact from the database
             _dbContext.Contacts.Remove(existingContact);
             await _dbContext.SaveChangesAsync();
-            InvalidateAllCaches();
+            _cacheManager.InvalidateAllCaches();
             // Return a No Content response
             return NoContent();
-        }
-
-        private void InvalidateAllCaches()
-        {
-            foreach (var key in _cacheKeys)
-            {
-                _cache.Remove(key);
-            }
-            _cacheKeys.Clear();
         }
     }
 }

@@ -1,3 +1,4 @@
+using ECommerce;
 using ECommerce.Models;
 using ECommerce.ViewModels;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,8 @@ builder.Services.AddResponseCaching();
 builder.Services.AddMemoryCache();
 builder.Services.AddDbContext<EcommerceContext>(options =>
 	options.UseSqlite(builder.Configuration.GetConnectionString("MyDatabaseConnection")));
+
+builder.Services.AddSingleton<CacheManager>();
 
 builder.Services.AddCors(options =>
 {
