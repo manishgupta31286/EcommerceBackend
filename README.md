@@ -1,1 +1,1 @@
-# SAAssignmentBackend
+Inorder to run this project, open Visual Studio and run the application using interface.
