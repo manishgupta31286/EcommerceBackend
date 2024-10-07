@@ -9,21 +9,15 @@ namespace ECommerce
     using Microsoft.Extensions.Caching.Memory;
     using System.Collections.Concurrent;
 
-    public class CacheManager
+    public class CacheManager(IMemoryCache cache)
     {
-        private readonly IMemoryCache _cache;
-        private readonly ConcurrentBag<string> _cacheKeys;
-
-        public CacheManager(IMemoryCache cache)
-        {
-            _cache = cache;
-            _cacheKeys = new ConcurrentBag<string>();
-        }
+        private readonly IMemoryCache _cache = cache;
+        private readonly ConcurrentBag<string> _cacheKeys = [];
 
         public void AddToCache(string key, object value)
         {
             _cache.Set(key, value);
-            _cacheKeys.Add(key);  // ConcurrentBag is thread-safe
+            _cacheKeys.Add(key);
         }
 
         public void InvalidateAllCaches()
@@ -32,7 +26,7 @@ namespace ECommerce
             {
                 _cache.Remove(key);
             }
-            _cacheKeys.Clear();  // You might want to keep the keys for future use
+            _cacheKeys.Clear();
         }
     }
 
