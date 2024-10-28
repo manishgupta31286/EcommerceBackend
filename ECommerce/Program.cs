@@ -3,6 +3,11 @@ using ECommerce.Models;
 using ECommerce.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,12 +28,45 @@ builder.Services.AddDbContext<EcommerceContext>(options =>
 
 builder.Services.AddSingleton<CacheManager>();
 
+builder.Services.AddAuthentication(options =>
+{
+	options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+	options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+	// options.TokenValidationParameters = new TokenValidationParameters
+	// {
+	// 	ValidateIssuer = true,
+	// 	ValidateAudience = true,
+	// 	ValidateLifetime = true,
+	// 	ValidateIssuerSigningKey = true,
+	// 	ValidIssuer = builder.Configuration["Jwt:Issuer"], // Your issuer
+	// 	ValidAudience = builder.Configuration["Jwt:Audience"], // Your audience
+	// 	IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("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")) // Your secret key
+	// };
+
+	options.Authority = builder.Configuration["Jwt:Issuer"]; // https://accounts.google.com
+	options.Audience = builder.Configuration["Jwt:Audience"]; // Your Google Client ID	
+	options.Events = new JwtBearerEvents
+	{
+		OnAuthenticationFailed = context =>
+		{
+			return Task.CompletedTask;
+		},
+		OnTokenValidated = context =>
+		{
+			return Task.CompletedTask;
+		}
+	};
+});
+
 builder.Services.AddCors(options =>
 {
 	options.AddPolicy("AllowOrigin",
 		builder =>
 		{
-			builder.WithOrigins("http://localhost:4200")
+			builder.AllowAnyOrigin()
 				.AllowAnyHeader()
 				.AllowAnyMethod();
 		});
@@ -55,6 +93,8 @@ app.UseCors("AllowOrigin");
 app.UseHttpsRedirection();
 
 app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseResponseCaching();
 app.MapControllers();
