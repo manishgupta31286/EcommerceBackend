@@ -8,13 +8,17 @@ namespace ECommerce.Controllers
 	[ApiController]
 	[Authorize]
 	[Route("api/[controller]")]
-	public class ProductsController(EcommerceContext dbContext) : ControllerBase
+	public class ProductsController(EcommerceContext dbContext, ILogger<ProductsController> logger) : ControllerBase
 	{
 		private readonly EcommerceContext _dbContext = dbContext;
+		private readonly ILogger<ProductsController> _logger = logger;
 		[HttpGet]
 		[ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
 		public async Task<IActionResult> Get()
 		{
+			_logger.LogInformation("This is an information log.");
+			_logger.LogWarning("This is a warning log.");
+			_logger.LogError("This is an error log.");
 			var products = await _dbContext.Products.ToListAsync();
 			return Ok(products);
 		}

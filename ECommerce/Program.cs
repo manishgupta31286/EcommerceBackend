@@ -8,11 +8,64 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Google.Cloud.Logging.V2;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Builder;
+using Serilog;
+using Serilog.Formatting.Json;
+using Google.Api;
+using Serilog.Sinks.GoogleCloudLogging;
+using Google.Apis.Auth.OAuth2;
+using Grpc.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+string credentialsPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "seedangularecommerce-49e6c5bfaeff.json");
+GoogleCredential credential;
+using (var stream = new FileStream(credentialsPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+{
+	credential = GoogleCredential.FromStream(stream);
+}
+var channel = credential.ToChannelCredentials();
+
+var loggingClient = new LoggingServiceV2ClientBuilder
+{
+	ChannelCredentials = credential.ToChannelCredentials()
+}.Build();
+
+Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", credentialsPath);
+
+Log.Logger = new LoggerConfiguration()
+	.MinimumLevel.Debug() // Set minimum log level
+	.WriteTo.GoogleCloudLogging("seedangularecommerce", "seedangularecommerce") // Project ID and Log Name
+	.WriteTo.Console()
+	.CreateLogger();
+
+using (var stream = new FileStream(credentialsPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+{
+	credential = GoogleCredential.FromStream(stream);
+}
+
+var googleCredentialJson = System.IO.File.ReadAllText(credentialsPath);
+
+//Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", credentialsPath);
+
+Log.Logger = new LoggerConfiguration()
+	.MinimumLevel.Debug()
+	.WriteTo.GoogleCloudLogging(new GoogleCloudLoggingSinkOptions()
+	{
+		ProjectId = "seedangularecommerce",
+		ResourceType = "global",
+		GoogleCredentialJson = googleCredentialJson
+	})
+	.CreateLogger();
+
+
+builder.Host.UseSerilog();
 
 builder.Configuration.SetBasePath(Directory.GetCurrentDirectory())
 	.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
@@ -28,6 +81,7 @@ builder.Services.AddDbContext<EcommerceContext>(options =>
 
 builder.Services.AddSingleton<CacheManager>();
 
+
 builder.Services.AddAuthentication(options =>
 {
 	options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -35,17 +89,6 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-	// options.TokenValidationParameters = new TokenValidationParameters
-	// {
-	// 	ValidateIssuer = true,
-	// 	ValidateAudience = true,
-	// 	ValidateLifetime = true,
-	// 	ValidateIssuerSigningKey = true,
-	// 	ValidIssuer = builder.Configuration["Jwt:Issuer"], // Your issuer
-	// 	ValidAudience = builder.Configuration["Jwt:Audience"], // Your audience
-	// 	IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("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")) // Your secret key
-	// };
-
 	options.Authority = builder.Configuration["Jwt:Issuer"]; // https://accounts.google.com
 	options.Audience = builder.Configuration["Jwt:Audience"]; // Your Google Client ID	
 	options.Events = new JwtBearerEvents
